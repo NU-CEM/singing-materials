@@ -32,6 +32,17 @@ Or, to quote chat GPT, after prompting with `explain what a phonon is for a gene
 >
 > So, when you heat up a metal rod or any solid object, you're actually giving energy to these phonons, making the particles inside it vibrate faster and spread that heat energy. Without phonons, heat wouldn't be able to move through materials, and things like cooking, heating your home, or even your computer's microchips wouldn't work as they do. In short, phonons are like the messengers that carry heat energy by making tiny particles dance and transfer that heat from one place to another.
 
+
+### So what *is* sonification?
+
+Sonification is the use of non-speech audio to convey information. A well-known scientific example is a geiger counter which produces an audible click when it detects an ionisation event. Sonification is being increasingly used within the physical sciences, in particular for [astrophysical research](https://www.scientificamerican.com/video/listen-to-the-astonishing-chirp-of-two-black-holes-merging). 
+
+Sonification has also been used as a tool for music composition by a [number of contemporary classical composers](https://www.straebel.com/files/Straebel%202010_Sonification%20Metaphor.pdf). 
+
+This continuum - from data representation to data abstraction - is discussed in the paper [`Making data sing`](https://www.researchgate.net/profile/Atau-Tanaka/publication/312740596_Making_Data_Sing_Embodied_Approaches_to_Sonification/links/5fc6b5f2299bf188d4e8d59e/Making-Data-Sing-Embodied-Approaches-to-Sonification.pdf), which inspired this project title.
+
+
+
 ### How can I run your code?
 
 The code is currently in development, and is in a fragile (ie, easily broken) state.

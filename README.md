@@ -51,4 +51,4 @@ To run through the code in the notebook follow these setup instructions: [TODO]
 
 ### How can I get involved?
 
-If you have a suggestion, please raise an issue on this repository and/or contact Lucy: l.whalley@northumbria.ac.uk.
+If you have a suggestion, please raise an issue on this repository and/or contact project lead Lucy: l.whalley@northumbria.ac.uk.

@@ -3,7 +3,7 @@
 ### What is the Singing Materials project?
 
 - Singing Materials explores the sonification of phonon data.
-- The project team are myself, [Prof. Paul Vickers](https://paulvickers.github.io/), [Dr Adam Parkinson](https://peoplefinder.lsbu.ac.uk/researcher/825yv/dr-adam-parkinson), [Prakriti Kayastha](https://prakayastha.github.io/) and [Ify Nwabuokei](https://github.com/ifylala).
+- The project team are [Prakriti Kayastha](https://prakayastha.github.io/), [Ify Nwabuokei](https://github.com/ifylala), [Adam Parkinson](https://peoplefinder.lsbu.ac.uk/researcher/825yv/dr-adam-parkinson), [Lucy Whalley](https://lucydot.github.io) and [Paul Vickers](https://paulvickers.github.io/).
 - This project is at an early stage, with software development happening [here](https://github.com/nu-cem/singing-materials) and [here](https://github.com/nu-cem/singing-materials-app).
 - Our starting point is the audification of phonon data  (mapping phonon frequencies to the audible range).
 - In the medium term, we would like to explore the use of phonon data for science communication via electronic music performance. Phonon Rave, anyone?

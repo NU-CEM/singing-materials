@@ -74,6 +74,7 @@ To activate the environment, use the command;
 **Step 4: Install Dependencies**
 
 While in the activated environment, install the required Python packages. Use the following commands:
+
 `conda install -c conda-forge sounddevice`  
 `conda install numpy scipy`   
 `pip install sounddevice`   

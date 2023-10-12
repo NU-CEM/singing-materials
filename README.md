@@ -49,40 +49,41 @@ The code is currently in development, and is in a fragile (ie, easily broken) st
 
 To run through the code in the notebook follow these setup instructions: 
 
-Step 1: Clone the Git Repository
-
+**Step 1: Clone the Git Repository**
 
 Open a terminal or command prompt and navigate to the directory where you want to store the code from the Git repository. Then, use the following command to clone the repository. 
-git clone <repository_url>
+
+`git clone https://github.com/NU-CEM/singing-materials.git`
 
 This will create a local copy of the code on your system.
 
-Step 2: Create a Conda Environment
-
+**Step 2: Create a Conda Environment**
 
 Navigate to the directory where you cloned the repository. Use the following commands to create a new Conda environment and activate it. 
-conda info --envs
-conda create --name <environment_name>
+In this case our environment_name is singing-materials. 
 
-In this case our environment_name is singing-materials. Hence code will be;
-conda create --name singing-materials
+`conda info --envs`  
+`conda create --name singing-materials`  
 
-Step 3: Activate the environment
+**Step 3: Activate the environment** 
 
 To activate the environment, use the command;
-conda activate singing-materials
 
-Step 4: Install Dependencies
+`conda activate singing-materials`
+
+**Step 4: Install Dependencies**
+
 While in the activated environment, install the required Python packages. Use the following commands:
-conda install -c conda-forge sounddevice
-conda install numpy scipy 
-pip install sounddevice 
-pip install mp-api
+`conda install -c conda-forge sounddevice`  
+`conda install numpy scipy`   
+`pip install sounddevice`   
+`pip install mp-api`
 
 This will install all the necessary packages.
 
-Step 5: Running the Code
-Now that everything is set up, you can run the code from the Jupyter notebook. Navigate to the directory containing the code and run it.
+**Step 5: Running the Code**
+
+Now that everything is set up, you can run the code from the Jupyter notebook. Navigate to the directory containing the notebook, start the server with `jupyter notebook`, open the notebook, and run each cell.
 You should hear the sound output based on the phonon frequencies and other parameters defined.
 
 ### How can I get involved?

@@ -74,10 +74,10 @@ conda activate singing-materials
 
 Step 4: Install Dependencies
 While in the activated environment, install the required Python packages. Use the following commands:
-conda install -c conda-forge sounddevice
-conda install numpy scipy 
-pip install sounddevice 
-pip install mp-api
+  
+`conda install numpy scipy jupyter pip`   
+`pip install sounddevice`   
+`pip install mp-api`
 
 This will install all the necessary packages.
 

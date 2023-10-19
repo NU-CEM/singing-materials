@@ -144,31 +144,11 @@ def play_chord(timelength):
     stream.stop()
     stream.close()
 
-phonon_frequencies = frequencies_from_mesh(phonon_mesh_filepath)
-# convert phonon frequencies to something in the audible range (return in Hz)
-audible_frequencies = phonon_to_audible(phonon_frequencies)
+def main():
 
-# create global dictionary containing frequencies as keys. This will be used in the output stream.
-audible_dictionary = dict.fromkeys(audible_frequencies, 0)
-
-# create output stream and run for set time
-play_chord(timelength)
-
-# get phonon frequencies as numpy array
-# phonon_frequencies = frequencies_from_mesh(phonon_mesh_filepath)
-Cs3Sb = "mp-10378" 
-K2TeCl6  = "mp-569149" 
-BaAg2GeS4 = "mp-7394" 
-CuCl = "mp-571386" 
-CaPbF6 = "mp-19799" 
-
-for mp_id in [Cs3Sb,K2TeCl6,BaAg2GeS4,CuCl,CaPbF6]:
-
-    # get phonons (in THz)
-    phonon_frequencies = frequencies_from_mp_id(mp_id)
+    global audible_dictionary  # global audio_dictionary for callback
     
-    phonon_frequencies = excite_by_heat(phonon_frequencies,300)
-
+    phonon_frequencies = frequencies_from_mesh(phonon_mesh_filepath)
     # convert phonon frequencies to something in the audible range (return in Hz)
     audible_frequencies = phonon_to_audible(phonon_frequencies)
 
@@ -178,12 +158,29 @@ for mp_id in [Cs3Sb,K2TeCl6,BaAg2GeS4,CuCl,CaPbF6]:
     # create output stream and run for set time
     play_chord(timelength)
 
-def main():
-    # the main execution logic here
-    phonon_frequencies = frequencies_from_mesh(phonon_mesh_filepath)
-    audible_frequencies = phonon_to_audible(phonon_frequencies)
-    audible_dictionary = dict.fromkeys(audible_frequencies, 0)
-    play_chord(timelength)
+    # get phonon frequencies as numpy array
+    # phonon_frequencies = frequencies_from_mesh(phonon_mesh_filepath)
+    Cs3Sb = "mp-10378" 
+    K2TeCl6  = "mp-569149" 
+    BaAg2GeS4 = "mp-7394" 
+    CuCl = "mp-571386" 
+    CaPbF6 = "mp-19799" 
+
+    for mp_id in [Cs3Sb,K2TeCl6,BaAg2GeS4,CuCl,CaPbF6]:
+
+        # get phonons (in THz)
+        phonon_frequencies = frequencies_from_mp_id(mp_id)
+        
+        phonon_frequencies = excite_by_heat(phonon_frequencies,300)
+
+        # convert phonon frequencies to something in the audible range (return in Hz)
+        audible_frequencies = phonon_to_audible(phonon_frequencies)
+
+        # create global dictionary containing frequencies as keys. This will be used in the output stream.
+        audible_dictionary = dict.fromkeys(audible_frequencies, 0)
+
+        # create output stream and run for set time
+        play_chord(timelength)
 
 if __name__ == "__main__":
     main()

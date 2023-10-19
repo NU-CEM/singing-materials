@@ -96,7 +96,7 @@ def frequencies_from_mp_id(mp_id):
     import mp_api
     from mp_api.client import MPRester
 
-    with MPRester("os1XoXmCTeMm5rDO4kY9ClmfVKzuo5ek") as mpr:
+    with MPRester("[insert API key here]") as mpr:
         try:
             bs = mpr.phonon.get_data_by_id(mp_id).ph_bs
         except:

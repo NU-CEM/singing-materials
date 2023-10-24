@@ -4,6 +4,8 @@ import math
 import time
 import yaml
 from scipy import constants
+import os
+ 
 
 phonon_mesh_filepath = './data/BaS_Fm3m/mesh.yaml'
 sample_rate = 44100
@@ -37,21 +39,21 @@ def callback(outdata: np.ndarray, frames: int, time, status) -> None:
         result = result.reshape(-1, 1)
 
     outdata[:] = result
-    
+
 def phonon_to_audible(phonon_frequencies):
     """takes phonon frequencies (in THz) and returns suitable phonon frequencies (in Hz)"""
-    
+
     if len(phonon_frequencies) == 1:
         audible_frequencies = [440]
         print("only one phonon frequency, so mapping to 440Hz")
     else:
         audible_frequencies = linear_map(phonon_frequencies)
-        
+
     return audible_frequencies
 
 def linear_map(phonon_frequencies):
     """linearly maps phonon frequencies (in THz) to frequencies in the audible range (in Hz)"""
-    
+
     if min_phonon is None:
         min_phonon_hz = min(phonon_frequencies)*1E12
     else:
@@ -66,13 +68,13 @@ def linear_map(phonon_frequencies):
     scale_factor = (max_audible - min_audible) / (max_phonon_hz - min_phonon_hz)
     audible_frequencies = [ scale_factor*(frequency-min_phonon_hz) + min_audible for frequency in phonon_frequencies_hz]
     print("audible frequencies are (Hz):", audible_frequencies)
-    
+
     return audible_frequencies
 
 def frequencies_from_mesh(phonon_mesh_filepath):
     """return phonon frequencies at gamma point from a phonopy mesh.yaml. Assumes gamma point is zeroth
     element in data['phonon']."""
-    
+
     # read yaml data 
     with open(phonon_mesh_filepath) as f:
         data = yaml.safe_load(f)
@@ -80,13 +82,13 @@ def frequencies_from_mesh(phonon_mesh_filepath):
     # extract list of unique frequencies - these are in THz
     phonon_frequencies = list(set([dictionary['frequency'] for dictionary in data['phonon'][0]['band']]))
     phonon_frequencies = process_imaginary(phonon_frequencies)
-    
+
     return phonon_frequencies
-    
+
 def process_imaginary(phonon_frequencies):
     # remove any imaginary modes
     phonon_cleaned_frequencies = [frequency for frequency in phonon_frequencies if frequency > 0]
-    
+
     return phonon_cleaned_frequencies
 
 def frequencies_from_mp_id(mp_id):
@@ -96,7 +98,7 @@ def frequencies_from_mp_id(mp_id):
     import mp_api
     from mp_api.client import MPRester
 
-    with MPRester("os1XoXmCTeMm5rDO4kY9ClmfVKzuo5ek") as mpr:
+    with MPRester(os.environ.get('MP_API_Key')) as mpr:
         try:
             bs = mpr.phonon.get_data_by_id(mp_id).ph_bs
         except:
@@ -108,7 +110,7 @@ def frequencies_from_mp_id(mp_id):
     phonon_frequencies = list(bs.bands[:,0])
     phonon_frequencies = process_imaginary(phonon_frequencies)
     print("phonon frequencies are (THz):", phonon_frequencies)
-    
+
     return phonon_frequencies
 
 def bose_einstien_distribution(energy,temperature):
@@ -119,7 +121,7 @@ def frequency_to_energy(frequency):
     frequency_hz = frequency*1E12
     energy = constants.h*frequency_hz
     return energy
-    
+
 def excite_by_heat(phonon_frequencies, temperature):
     """return frequencies which have average occupation >= 1 at a given temperature. 
     Average occupation is calculated using Bose-Einstien statistics"""
@@ -133,7 +135,7 @@ def excite_by_heat(phonon_frequencies, temperature):
 
 def play_chord(timelength):
     """DRONE POWER"""
-    
+
     # create stream
     stream = sounddevice.OutputStream(channels=2, blocksize=sample_rate, 
                 samplerate=sample_rate, callback=callback)
@@ -144,31 +146,11 @@ def play_chord(timelength):
     stream.stop()
     stream.close()
 
-phonon_frequencies = frequencies_from_mesh(phonon_mesh_filepath)
-# convert phonon frequencies to something in the audible range (return in Hz)
-audible_frequencies = phonon_to_audible(phonon_frequencies)
+def main():
 
-# create global dictionary containing frequencies as keys. This will be used in the output stream.
-audible_dictionary = dict.fromkeys(audible_frequencies, 0)
+    global audible_dictionary  # global audio_dictionary for callback
 
-# create output stream and run for set time
-play_chord(timelength)
-
-# get phonon frequencies as numpy array
-# phonon_frequencies = frequencies_from_mesh(phonon_mesh_filepath)
-Cs3Sb = "mp-10378" 
-K2TeCl6  = "mp-569149" 
-BaAg2GeS4 = "mp-7394" 
-CuCl = "mp-571386" 
-CaPbF6 = "mp-19799" 
-
-for mp_id in [Cs3Sb,K2TeCl6,BaAg2GeS4,CuCl,CaPbF6]:
-
-    # get phonons (in THz)
-    phonon_frequencies = frequencies_from_mp_id(mp_id)
-    
-    phonon_frequencies = excite_by_heat(phonon_frequencies,300)
-
+    phonon_frequencies = frequencies_from_mesh(phonon_mesh_filepath)
     # convert phonon frequencies to something in the audible range (return in Hz)
     audible_frequencies = phonon_to_audible(phonon_frequencies)
 
@@ -178,12 +160,30 @@ for mp_id in [Cs3Sb,K2TeCl6,BaAg2GeS4,CuCl,CaPbF6]:
     # create output stream and run for set time
     play_chord(timelength)
 
-def main():
-    # the main execution logic here
-    phonon_frequencies = frequencies_from_mesh(phonon_mesh_filepath)
-    audible_frequencies = phonon_to_audible(phonon_frequencies)
-    audible_dictionary = dict.fromkeys(audible_frequencies, 0)
-    play_chord(timelength)
+    # get phonon frequencies as numpy array
+    # phonon_frequencies = frequencies_from_mesh(phonon_mesh_filepath)
+    Cs3Sb = "mp-10378" 
+    K2TeCl6  = "mp-569149" 
+    BaAg2GeS4 = "mp-7394" 
+    CuCl = "mp-571386" 
+    CaPbF6 = "mp-19799" 
+
+    for mp_id in [Cs3Sb,K2TeCl6,BaAg2GeS4,CuCl,CaPbF6]:
+
+        # get phonons (in THz)
+        phonon_frequencies = frequencies_from_mp_id(mp_id)
+
+        phonon_frequencies = excite_by_heat(phonon_frequencies,300)
+
+        # convert phonon frequencies to something in the audible range (return in Hz)
+        audible_frequencies = phonon_to_audible(phonon_frequencies)
+
+        # create global dictionary containing frequencies as keys. This will be used in the output stream.
+        audible_dictionary = dict.fromkeys(audible_frequencies, 0)
+
+        # create output stream and run for set time
+        play_chord(timelength)
+
 
 if __name__ == "__main__":
     main()

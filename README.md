@@ -49,40 +49,61 @@ The code is currently in development, and is in a fragile (ie, easily broken) st
 
 To run through the code in the notebook follow these setup instructions: 
 
-Step 1: Clone the Git Repository
-
+**Step 1: Clone the Git Repository**
 
 Open a terminal or command prompt and navigate to the directory where you want to store the code from the Git repository. Then, use the following command to clone the repository. 
-git clone <repository_url>
+
+`git clone https://github.com/NU-CEM/singing-materials.git`
 
 This will create a local copy of the code on your system.
 
-Step 2: Create a Conda Environment
-
+**Step 2: Create a Conda Environment**
 
 Navigate to the directory where you cloned the repository. Use the following commands to create a new Conda environment and activate it. 
-conda info --envs
-conda create --name <environment_name>
+In this case our environment_name is singing-materials. 
 
-In this case our environment_name is singing-materials. Hence code will be;
-conda create --name singing-materials
+`conda info --envs`  
+`conda create --name singing-materials`  
 
-Step 3: Activate the environment
+**Step 3: Activate the environment** 
 
 To activate the environment, use the command;
-conda activate singing-materials
 
-Step 4: Install Dependencies
+`conda activate singing-materials`
+
+**Step 4: Install Dependencies**
+
 While in the activated environment, install the required Python packages. Use the following commands:
-  
 `conda install numpy scipy jupyter pip`   
 `pip install sounddevice`   
 `pip install mp-api`
 
 This will install all the necessary packages.
 
-Step 5: Running the Code
-Now that everything is set up, you can run the code from the Jupyter notebook. Navigate to the directory containing the code and run it.
+**Step 5: Creating Materials Project API Key**
+
+To interact with the Materials Project API, you will need an API key. Here's how you can obtain one:
+* Visit the Materials Project website (https://materialsproject.org/).
+* Sign up or log in to your account.
+* Once logged in, navigate to your account settings.
+* Under the API key section, generate a new API key.
+
+**Step 6: Setting the API Key as an Environmental Variable**
+
+To use the Materials Project API key with this code, you need to set it as an environmental variable in your system. Here's how you can do it:
+For Linux or macOS,  add the command line below to your ~/.bashrc or ~/.bash_profile file, replacing [YOUR_MP_API_KEY_HERE] with your actual API key:
+
+`export MP_API_KEY="YOUR_MP_API_KEY_HERE"`
+
+For Windows, you can set the environmental variable using the Command Prompt:
+
+`setx MP_API_KEY "YOUR_MP_API_KEY_HERE"`
+
+This step is crucial to ensure that the code can authenticate and interact with the Materials Project API.
+
+**Step 7: Running the Code**
+
+Now that everything is set up, you can run the code from the Jupyter notebook. Navigate to the directory containing the notebook, start the server with `jupyter notebook`, open the notebook, and run each cell.
 You should hear the sound output based on the phonon frequencies and other parameters defined.
 
 ### How can I get involved?

@@ -149,7 +149,6 @@ def play_chord(timelength):
 def main():
 
     global audible_dictionary  # global audio_dictionary for callback
-
     phonon_frequencies = frequencies_from_mesh(phonon_mesh_filepath)
     # convert phonon frequencies to something in the audible range (return in Hz)
     audible_frequencies = phonon_to_audible(phonon_frequencies)
@@ -172,7 +171,6 @@ def main():
 
         # get phonons (in THz)
         phonon_frequencies = frequencies_from_mp_id(mp_id)
-
         phonon_frequencies = excite_by_heat(phonon_frequencies,300)
 
         # convert phonon frequencies to something in the audible range (return in Hz)
@@ -183,7 +181,6 @@ def main():
 
         # create output stream and run for set time
         play_chord(timelength)
-
 
 if __name__ == "__main__":
     main()

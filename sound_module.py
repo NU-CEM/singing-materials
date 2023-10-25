@@ -5,6 +5,7 @@ import time
 import yaml
 from scipy import constants
 import os
+import sys
  
 
 phonon_mesh_filepath = './data/BaS_Fm3m/mesh.yaml'
@@ -147,40 +148,29 @@ def play_chord(timelength):
     stream.close()
 
 def main():
+    if len(sys.argv) != 2:
+        print("Usage: python sound_module.py <mp_id>")
+        return
+
+    mp_id = sys.argv[1]  # Retrieve the mp_id from command-line arguments
 
     global audible_dictionary  # global audio_dictionary for callback
-    phonon_frequencies = frequencies_from_mesh(phonon_mesh_filepath)
+
+   # The mp_id variable can be used here to determine which material to process
+    
+    # get phonons (in THz)
+    phonon_frequencies = frequencies_from_mp_id(mp_id)
+
+    phonon_frequencies = excite_by_heat(phonon_frequencies, 300)
+
     # convert phonon frequencies to something in the audible range (return in Hz)
     audible_frequencies = phonon_to_audible(phonon_frequencies)
 
     # create global dictionary containing frequencies as keys. This will be used in the output stream.
     audible_dictionary = dict.fromkeys(audible_frequencies, 0)
 
-    # create output stream and run for set time
+    # create output stream and run for a set time
     play_chord(timelength)
-
-    # get phonon frequencies as numpy array
-    # phonon_frequencies = frequencies_from_mesh(phonon_mesh_filepath)
-    Cs3Sb = "mp-10378" 
-    K2TeCl6  = "mp-569149" 
-    BaAg2GeS4 = "mp-7394" 
-    CuCl = "mp-571386" 
-    CaPbF6 = "mp-19799" 
-
-    for mp_id in [Cs3Sb,K2TeCl6,BaAg2GeS4,CuCl,CaPbF6]:
-
-        # get phonons (in THz)
-        phonon_frequencies = frequencies_from_mp_id(mp_id)
-        phonon_frequencies = excite_by_heat(phonon_frequencies,300)
-
-        # convert phonon frequencies to something in the audible range (return in Hz)
-        audible_frequencies = phonon_to_audible(phonon_frequencies)
-
-        # create global dictionary containing frequencies as keys. This will be used in the output stream.
-        audible_dictionary = dict.fromkeys(audible_frequencies, 0)
-
-        # create output stream and run for set time
-        play_chord(timelength)
 
 if __name__ == "__main__":
     main()

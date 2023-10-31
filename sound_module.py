@@ -10,11 +10,13 @@ import sys
 
 phonon_mesh_filepath = './data/BaS_Fm3m/mesh.yaml'
 sample_rate = 44100
-timelength = 5  # length of sample in seconds
 min_audible = 20# minimum audible frequency in herz
 max_audible = 8E3 # maximum audible frequency in herz
-min_phonon = 0 # minimum phonon frequency in THz, if not set it is extracted from the phonon calc
-max_phonon = 16 # maximum phonon frequency in THz, if not set it is extracted from the phonon calc
+
+# Prompt the user for input
+timelength = float(input("Enter the timelength of the sample in seconds: "))
+min_phonon = float(input("Enter the minimum phonon frequency in THz: "))
+max_phonon = float(input("Enter the maximum phonon frequency in THz: "))
 
 # this function adapted from
 # https://stackoverflow.com/questions/73494717/trying-to-play-multiple-frequencies-in-python-sounddevice-blow-horrific-speaker

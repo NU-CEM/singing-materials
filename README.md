@@ -74,14 +74,34 @@ To activate the environment, use the command;
 **Step 4: Install Dependencies**
 
 While in the activated environment, install the required Python packages. Use the following commands:
-
 `conda install numpy scipy jupyter pip`   
 `pip install sounddevice`   
 `pip install mp-api`
 
 This will install all the necessary packages.
 
-**Step 5: Running the Code**
+**Step 5: Creating Materials Project API Key**
+
+To interact with the Materials Project API, you will need an API key. Here's how you can obtain one:
+* Visit the Materials Project website (https://materialsproject.org/).
+* Sign up or log in to your account.
+* Once logged in, navigate to your account settings.
+* Under the API key section, generate a new API key.
+
+**Step 6: Setting the API Key as an Environmental Variable**
+
+To use the Materials Project API key with this code, you need to set it as an environmental variable in your system. Here's how you can do it:
+For Linux or macOS,  add the command line below to your ~/.bashrc or ~/.bash_profile file, replacing [YOUR_MP_API_KEY_HERE] with your actual API key:
+
+`export MP_API_KEY="YOUR_MP_API_KEY_HERE"`
+
+For Windows, you can set the environmental variable using the Command Prompt:
+
+`setx MP_API_KEY "YOUR_MP_API_KEY_HERE"`
+
+This step is crucial to ensure that the code can authenticate and interact with the Materials Project API.
+
+**Step 7: Running the Code**
 
 Now that everything is set up, you can run the code from the Jupyter notebook. Navigate to the directory containing the notebook, start the server with `jupyter notebook`, open the notebook, and run each cell.
 You should hear the sound output based on the phonon frequencies and other parameters defined.

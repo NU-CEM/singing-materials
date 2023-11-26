@@ -18,26 +18,48 @@ max_audible = 8E3 # maximum audible frequency in herz
 # https://stackoverflow.com/questions/73494717/trying-to-play-multiple-frequencies-in-python-sounddevice-blow-horrific-speaker
 def callback(outdata: np.ndarray, frames: int, time, status) -> None:
     """writes sound output to 'outdata' from sound_queue."""
+
     result = None
 
-    for frequency, start_index in audible_dictionary.items():
-        t = (start_index + np.arange(frames)) / sample_rate
+    for frequency, data in audible_dictionary.items():
+
+        t = (data["index"] + np.arange(frames)) / sample_rate
         t = t.reshape(-1, 1)
 
-        wave = np.sin(2 * np.pi * frequency * t)
+        wave = data["amplitude"]*np.sin(2 * np.pi * frequency * t)
 
         if result is None:
             result = wave
         else:
             result += wave
 
-        audible_dictionary[frequency] += frames
+        if np.any(np.abs(result)>1):
+            print("Halt: amplitude exceeding magnitude of 1")
+            return
+        # we need to be careful with amplitude...it can hurt your ears..
+        # this stops amplitude being set too high. ONLY ADJUST IF YOU UNDERSTAND THE CONSEQUENCES!
+
+        data["index"] += frames
 
     if result is None:
         result = np.arange(frames) / sample_rate
         result = result.reshape(-1, 1)
 
     outdata[:] = result
+
+def get_amplitudes(num_frequencies=None,dos_array=None):
+    """returns an amplitude at which to play each frequency.
+    If num_frequencies supplied every frequency amplitude will be played at 1/num_amplitudes.
+    Else if a dos array is supplied this will be applied to each frequency in turn."""
+
+    if num_frequencies:
+        return np.ones(num_frequencies)*1/(num_frequencies)
+
+    elif amplitude_array:
+        pass
+
+    else: 
+        print("Error: no amplitude data supplied.")
 
 def phonon_to_audible(phonon_frequencies):
     """takes phonon frequencies (in THz) and returns suitable phonon frequencies (in Hz)"""
@@ -201,14 +223,22 @@ def main(args):
             "audible_frequencies": audible_frequencies
         }
 
+        amplitudes = get_amplitudes(num_frequencies=len(audible_frequencies))
+
+        assert len(audible_frequencies) == len(amplitudes), "length of frequency and amplitude arrays are not equal"
+
         # Create global dictionary containing frequencies as keys. This will be used in the output stream.
-        audible_dictionary = dict.fromkeys(audible_frequencies, 0)
+        audible_dictionary = {}
+        for frequency, amplitude in zip(audible_frequencies,amplitudes):
+            audible_dictionary[frequency] = {'amplitude': amplitude, 'index': np.random.randint(0,1E4)}
+            # I might be imagining it, but placing slightly out of phase with a random index seems to make less harsh.
 
         # Create and run the output stream for a set time
         play_chord(timelength)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Phonon Audible Frequencies Player")
+
+    parser = argparse.ArgumentParser(description="Singing Materials Player")
     parser.add_argument("mp_ids", nargs='+', help="Materials Project IDs")
     parser.add_argument("--min_phonon", type=float, default=None, help="Minimum phonon frequency in THz")
     parser.add_argument("--max_phonon", type=float, default=None, help="Maximum phonon frequency in THz")

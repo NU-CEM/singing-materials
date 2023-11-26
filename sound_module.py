@@ -11,8 +11,7 @@ import argparse
 phonon_mesh_filepath = './data/BaS_Fm3m/mesh.yaml'
 sample_rate = 44100
 min_audible = 20# minimum audible frequency in herz
-max_audible = 8E3 # maximum audible frequency in herz
-
+max_audible = 800 # maximum audible frequency in herz
 
 # this function adapted from
 # https://stackoverflow.com/questions/73494717/trying-to-play-multiple-frequencies-in-python-sounddevice-blow-horrific-speaker
@@ -21,7 +20,7 @@ def callback(outdata: np.ndarray, frames: int, time, status) -> None:
 
     result = None
 
-    for frequency, data in audible_dictionary.items():
+    for frequency, data in sonification_dictionary.items():
 
         t = (data["index"] + np.arange(frames)) / sample_rate
         t = t.reshape(-1, 1)
@@ -39,6 +38,8 @@ def callback(outdata: np.ndarray, frames: int, time, status) -> None:
         # we need to be careful with amplitude...it can hurt your ears..
         # this stops amplitude being set too high. ONLY ADJUST IF YOU UNDERSTAND THE CONSEQUENCES!
 
+        if 
+
         data["index"] += frames
 
     if result is None:
@@ -47,16 +48,16 @@ def callback(outdata: np.ndarray, frames: int, time, status) -> None:
 
     outdata[:] = result
 
-def get_amplitudes(num_frequencies=None,dos_array=None):
-    """returns an amplitude at which to play each frequency.
+def get_athermal_amplitudes(dos_array=None,num_frequencies=None):
+    """returns an amplitude at which to play each frequency, not taking into account phonon occupation.
     If num_frequencies supplied every frequency amplitude will be played at 1/num_amplitudes.
     Else if a dos array is supplied this will be applied to each frequency in turn."""
 
-    if num_frequencies:
-        return np.ones(num_frequencies)*1/(num_frequencies)
+    if dos_array is not None:
+        return dos_array / (max(dos_array)*num_frequencies)
 
-    elif amplitude_array:
-        pass
+    elif num_frequencies:
+        return np.ones(num_frequencies)*1/(num_frequencies)
 
     else: 
         print("Error: no amplitude data supplied.")
@@ -92,7 +93,7 @@ def linear_map(phonon_frequencies, min_phonon=None, max_phonon=None):
 
     return audible_frequencies
 
-def frequencies_from_mesh(phonon_mesh_filepath):
+def gamma_frequencies_from_mesh(phonon_mesh_filepath):
     """return phonon frequencies at gamma point from a phonopy mesh.yaml. Assumes gamma point is zeroth
     element in data['phonon']."""
 
@@ -112,8 +113,14 @@ def process_imaginary(phonon_frequencies):
 
     return phonon_cleaned_frequencies
 
-def frequencies_from_mp_id(mp_id):
-    """return phonon frequencies at gamma point from for a material hosted on the Materials Project ().
+def process_imaginary_dos(dos,phonon_frequencies) :
+    # remove dos which correspond to imaginary modes
+    dos_cleaned_frequencies = [dos[i] for i in range(len(phonon_frequencies)) if phonon_frequencies[i] > 0]
+
+    return np.array(dos_cleaned_frequencies)
+
+def gamma_frequencies_from_mp_id(mp_id):
+    """return phonon frequencies at gamma point from for a material hosted on the Materials Project.
     Material is identified using unique ID number. Note that to use this feature you need a Materials
     Project API key (https://materialsproject.org/api)."""
     import mp_api
@@ -134,6 +141,30 @@ def frequencies_from_mp_id(mp_id):
 
     return phonon_frequencies
 
+def dos_data_from_mp_id(mp_id):
+    """return frequencies at which density of states is evaluated, and the density of states itself. This is for a material hosted on the Materials Project.
+    Material is identified using unique ID number. Note that to use this feature you need a Materials
+    Project API key (https://materialsproject.org/api)."""
+    import mp_api
+    from mp_api.client import MPRester
+
+    with MPRester(os.environ.get('MP_API_Key')) as mpr:
+
+        try: 
+            dos = mpr.phonon.get_data_by_id(mp_id).ph_dos
+        except:
+            print("this materials project entry does not appear to have phonon data")
+            pass
+
+        phonon_frequencies = list(dos.as_dict()['frequencies'])     
+        phonon_frequencies = process_imaginary(phonon_frequencies)    
+
+        dos = dos.as_dict()['densities']
+        dos = process_imaginary_dos(dos,phonon_frequencies) 
+    
+    return phonon_frequencies, dos
+
+
 def bose_einstien_distribution(energy,temperature):
     return 1 / (math.exp(energy/(constants.Boltzmann*temperature)) - 1)
 
@@ -144,6 +175,7 @@ def frequency_to_energy(frequency):
     return energy
 
 def excite_by_heat(phonon_frequencies, temperature):
+    # TODO: this needs to be changed to "scale_by_occupation", and needs to act on the amplitude at which the frequency is played.
     """return frequencies which have average occupation >= 1 at a given temperature. 
     Average occupation is calculated using Bose-Einstien statistics"""
     average_occupations = np.array([bose_einstien_distribution(frequency_to_energy(frequency),temperature) 
@@ -170,13 +202,14 @@ def play_chord(timelength):
 
 def main(args):
     
-    global audible_dictionary  # global audio_dictionary for callback
+    global sonification_dictionary  # global audio_dictionary for callback
 
     # Process command-line arguments
     mp_ids = args.mp_ids
     min_phonon = args.min_phonon
     max_phonon = args.max_phonon
     timelength = args.timelength
+    temperature = args.temperature
 
      # Check if min_phonon and max_phonon values are valid floats
     if min_phonon is not None:
@@ -200,37 +233,39 @@ def main(args):
         print("Error: timelength must be a valid float.")
         return
 
+    if temperature:
+        assert temperature >= 0, "Error: temperature is specified in kelvin and must not be negative."
+
     # Assert min_phonon and max_phonon values
     assert min_phonon is None or max_phonon is None or min_phonon < max_phonon, "min_phonon must be less than max_phonon"
 
-    result_data = {}
-
    # The mp_id variable can be used here to determine which material to process
+
+   # TODO: Think about Nyquist frequency
     
     for mp_id in mp_ids:
-        # Get phonons (in THz) for the current MP ID
-        phonon_frequencies = frequencies_from_mp_id(mp_id)
-        
-        # Excite by heat and get frequencies
-        phonon_frequencies = excite_by_heat(phonon_frequencies, 300)
+
+        if args.gamma_mode:
+            # Get phonons (in THz) for the current MP ID
+            phonon_frequencies = gamma_frequencies_from_mp_id(mp_id)
+            amplitudes = get_athermal_amplitudes(num_frequencies=len(phonon_frequencies))
+
+        else:
+            phonon_frequencies, dos = dos_data_from_mp_id(mp_id)
+            amplitudes = get_athermal_amplitudes(dos_array=dos,num_frequencies=len(phonon_frequencies))
         
         # Convert phonon frequencies to audible frequencies (return in Hz)
         audible_frequencies = phonon_to_audible(phonon_frequencies)
         
-        # Store results for this MP ID
-        result_data[mp_id] = {
-            "phonon_frequencies": phonon_frequencies,
-            "audible_frequencies": audible_frequencies
-        }
-
-        amplitudes = get_amplitudes(num_frequencies=len(audible_frequencies))
-
+        # Excite by heat and get updated amplitudes
+        # if temperature:
+        #     amplitudes = scale_by_occupation(amplitudes, phonon_frequencies, temperature)
         assert len(audible_frequencies) == len(amplitudes), "length of frequency and amplitude arrays are not equal"
 
         # Create global dictionary containing frequencies as keys. This will be used in the output stream.
-        audible_dictionary = {}
+        sonification_dictionary = {}
         for frequency, amplitude in zip(audible_frequencies,amplitudes):
-            audible_dictionary[frequency] = {'amplitude': amplitude, 'index': np.random.randint(0,1E4)}
+            sonification_dictionary[frequency] = {'amplitude': amplitude, 'index': np.random.randint(0,1E3)}
             # I might be imagining it, but placing slightly out of phase with a random index seems to make less harsh.
 
         # Create and run the output stream for a set time
@@ -243,6 +278,8 @@ if __name__ == "__main__":
     parser.add_argument("--min_phonon", type=float, default=None, help="Minimum phonon frequency in THz")
     parser.add_argument("--max_phonon", type=float, default=None, help="Maximum phonon frequency in THz")
     parser.add_argument("--timelength", type=float, default=5, help="Length of the sample in seconds")
+    parser.add_argument("--gamma_mode", type=bool, default=False, help="If True then gamma point frequencies are sonified only.")
+    parser.add_argument("--temperature", type=float, default=None, help="Temperature in kelvin. If set the sonified amplitude is weighted by the bose-einstein distribution for phonon energy at specified temperature.")
 
     args = parser.parse_args()
     main(args)

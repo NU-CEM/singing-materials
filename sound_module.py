@@ -34,8 +34,6 @@ def callback(outdata: np.ndarray, frames: int, time, status) -> None:
         # we need to be careful with amplitude...it can hurt your ears..
         # this stops amplitude being set too high. ONLY ADJUST IF YOU UNDERSTAND THE CONSEQUENCES!
 
-        if 
-
         data["index"] += frames
 
     if result is None:
@@ -44,19 +42,25 @@ def callback(outdata: np.ndarray, frames: int, time, status) -> None:
 
     outdata[:] = result
 
-def get_athermal_amplitudes(dos_array=None,num_frequencies=None):
-    """returns an amplitude at which to play each frequency, not taking into account phonon occupation.
-    If num_frequencies supplied every frequency amplitude will be played at 1/num_amplitudes.
-    Else if a dos array is supplied this will be applied to each frequency in turn."""
+def get_athermal_amplitudes(dos_array=None, num_frequencies=None):
+    """returns an (unnormalised) amplitude at which to play each frequency, not taking into account phonon occupation.
+    If a dos array is supplied this will be applied to each frequency in turn.
+    Elif num_frequencies supplied every frequency amplitude will be played at same amplitude."""
 
     if dos_array is not None:
-        return dos_array / (max(dos_array)*num_frequencies)
+        return dos_array / max(dos_array)
 
     elif num_frequencies:
-        return np.ones(num_frequencies)*1/(num_frequencies)
+        return np.ones(num_frequencies)
 
     else: 
         print("Error: no amplitude data supplied.")
+
+def normalise_amplitudes(amplitudes):
+
+    amplitudes = amplitudes / sum(amplitudes)
+
+    return amplitudes
 
 def phonon_to_audible(phonon_frequencies, min_phonon, max_phonon, min_audible, max_audible):
     """takes phonon frequencies (in Hz) and returns frequencies within the human hearing range (in Hz)"""
@@ -159,7 +163,7 @@ def dos_data_from_mp_id(mp_id):
             print("this materials project entry does not appear to have phonon data")
             pass
 
-        phonon_frequencies = list(dos.as_dict()['frequencies']*1E12) # convert from THz to Hz 
+        phonon_frequencies = list(np.array(dos.as_dict()['frequencies'])*1E12) # convert from THz to Hz 
         phonon_frequencies = process_imaginary(phonon_frequencies)    
 
         dos = dos.as_dict()['densities']
@@ -255,13 +259,21 @@ def main(args):
         # Excite by heat and get updated amplitudes
         if args.temperature:
             amplitudes = scale_by_occupation(amplitudes, phonon_frequencies, args.temperature)
+        
+        # ensure that the sum of amplitudes at all times is < 1
+        amplitudes = normalise_amplitudes(amplitudes)
+
+        print("amplitudes are", amplitudes)
 
         assert len(audible_frequencies) == len(amplitudes), "length of frequency and amplitude arrays are not equal"
 
         # Create global dictionary containing frequencies as keys. This will be used in the output stream.
+        # TODO: play around with index
+        index=0
+        index=np.random.randint(0,1E6)
         sonification_dictionary = {}
         for frequency, amplitude in zip(audible_frequencies,amplitudes):
-            sonification_dictionary[frequency] = {'amplitude': amplitude, 'index': np.random.randint(0,1E3)}
+            sonification_dictionary[frequency] = {'amplitude': amplitude, 'index': index}
             # I might be imagining it, but placing slightly out of phase with a random index seems to make sound less harsh.
 
         # Create and run the output stream for a set time

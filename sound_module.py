@@ -176,17 +176,15 @@ def frequency_to_energy(frequency):
     energy = constants.h*frequency
     return energy
 
-def excite_by_heat(phonon_frequencies, temperature):
-    # TODO: this needs to be changed to "scale_by_occupation", and needs to act on the amplitude at which the frequency is played.
-    """return frequencies which have average occupation >= 1 at a given temperature. 
-    Average occupation is calculated using Bose-Einstien statistics"""
-    average_occupations = np.array([bose_einstien_distribution(frequency_to_energy(frequency),temperature) 
+def scale_by_occupation(amplitudes, phonon_frequencies, temperature):
+    """Re-scale the amplitude by the Bose Einstein occupation factor for a state with energy h*frequency at specified temperature."""
+    BE_occupations = np.array([bose_einstien_distribution(frequency_to_energy(frequency),temperature) 
                            for frequency in phonon_frequencies])
-    # need phonon_frequency as numpy array
-    phonon_frequencies = np.array(phonon_frequencies)
-    # can now use trendy indexing over a boolean array
-    occupied_modes = phonon_frequencies[average_occupations >= 1]
-    return occupied_modes
+
+    # scale by occupation expressed as a fraction of the total occupation
+    scaled_amplitudes = amplitudes*(BE_occupations/max(BE_occupations))
+
+    return scaled_amplitudes
 
 def play_chord(timelength):
     """DRONE POWER"""
@@ -255,8 +253,8 @@ def main(args):
         audible_frequencies = phonon_to_audible(phonon_frequencies, min_phonon, max_phonon, args.min_audible, args.max_audible)
         
         # Excite by heat and get updated amplitudes
-        # if args.temperature:
-        #     amplitudes = scale_by_occupation(amplitudes, phonon_frequencies, args.temperature)
+        if args.temperature:
+            amplitudes = scale_by_occupation(amplitudes, phonon_frequencies, args.temperature)
 
         assert len(audible_frequencies) == len(amplitudes), "length of frequency and amplitude arrays are not equal"
 

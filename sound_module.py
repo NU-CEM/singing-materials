@@ -7,11 +7,7 @@ from scipy import constants
 import os
 import argparse
  
-
-phonon_mesh_filepath = './data/BaS_Fm3m/mesh.yaml'
 sample_rate = 44100
-min_audible = 20# minimum audible frequency in herz
-max_audible = 800 # maximum audible frequency in herz
 
 # this function adapted from
 # https://stackoverflow.com/questions/73494717/trying-to-play-multiple-frequencies-in-python-sounddevice-blow-horrific-speaker
@@ -62,33 +58,40 @@ def get_athermal_amplitudes(dos_array=None,num_frequencies=None):
     else: 
         print("Error: no amplitude data supplied.")
 
-def phonon_to_audible(phonon_frequencies):
-    """takes phonon frequencies (in THz) and returns suitable phonon frequencies (in Hz)"""
+def phonon_to_audible(phonon_frequencies, min_phonon, max_phonon, min_audible, max_audible):
+    """takes phonon frequencies (in Hz) and returns frequencies within the human hearing range (in Hz)"""
 
     if len(phonon_frequencies) == 1:
         audible_frequencies = [440]
         print("only one phonon frequency, so mapping to 440Hz")
     else:
-        audible_frequencies = linear_map(phonon_frequencies)
+        audible_frequencies = linear_map(phonon_frequencies, min_phonon, max_phonon, min_audible, max_audible)
 
     return audible_frequencies
 
-def linear_map(phonon_frequencies, min_phonon=None, max_phonon=None):
-    """linearly maps phonon frequencies (in THz) to frequencies in the audible range (in Hz)"""
+def get_min_max_phonon_frequency(phonon_frequencies, min_phonon, max_phonon):
 
     if min_phonon is None:
-        min_phonon_hz = min(phonon_frequencies)*1E12
-    else:
-        min_phonon_hz = min_phonon*1E12
+        min_phonon = min(phonon_frequencies)
+
+    elif min_phonon > min(phonon_frequencies):
+        print("`min_phonon` parameter is more than the minimum phonon frequency in dataset; `min_phonon` will be overriden." )
+        min_phonon = min(phonon_frequencies)
 
     if max_phonon is None:
-        max_phonon_hz = max(phonon_frequencies)*1E12
-    else:
-        max_phonon_hz = max_phonon*1E12        
+        max_phonon = max(phonon_frequencies)
 
-    phonon_frequencies_hz = np.array(phonon_frequencies)*1E12
-    scale_factor = (max_audible - min_audible) / (max_phonon_hz - min_phonon_hz)
-    audible_frequencies = [ scale_factor*(frequency-min_phonon_hz) + min_audible for frequency in phonon_frequencies_hz]
+    elif max_phonon < max(phonon_frequencies):
+        print("`max_phonon` parameter is less than than the maximum phonon frequency in dataset; `max_phonon` will be overriden." )
+        max_phonon = max(phonon_frequencies)
+
+    return min_phonon, max_phonon
+
+def linear_map(phonon_frequencies, min_phonon, max_phonon, min_audible, max_audible):
+    """linearly maps phonon frequencies (in Hz) to frequencies in the audible range (in Hz)"""
+
+    scale_factor = (max_audible - min_audible) / (max_phonon - min_phonon)
+    audible_frequencies = [ scale_factor*(frequency-min_phonon) + min_audible for frequency in phonon_frequencies]
     print("audible frequencies are (Hz):", audible_frequencies)
 
     return audible_frequencies
@@ -120,7 +123,7 @@ def process_imaginary_dos(dos,phonon_frequencies) :
     return np.array(dos_cleaned_frequencies)
 
 def gamma_frequencies_from_mp_id(mp_id):
-    """return phonon frequencies at gamma point from for a material hosted on the Materials Project.
+    """return phonon frequencies (in Hz) at gamma point from for a material hosted on the Materials Project.
     Material is identified using unique ID number. Note that to use this feature you need a Materials
     Project API key (https://materialsproject.org/api)."""
     import mp_api
@@ -135,14 +138,14 @@ def gamma_frequencies_from_mp_id(mp_id):
 
     print("extracting frequencies for qpoint {}".format(bs.qpoints[0].cart_coords))
 
-    phonon_frequencies = list(bs.bands[:,0])
+    phonon_frequencies = list(bs.bands[:,0]*1E12)   # convert from THz to Hz
     phonon_frequencies = process_imaginary(phonon_frequencies)
-    print("phonon frequencies are (THz):", phonon_frequencies)
+    print("phonon frequencies are (Hz):", phonon_frequencies)
 
     return phonon_frequencies
 
 def dos_data_from_mp_id(mp_id):
-    """return frequencies at which density of states is evaluated, and the density of states itself. This is for a material hosted on the Materials Project.
+    """return frequencies (in Hz) at which density of states is evaluated, and the density of states itself. This is for a material hosted on the Materials Project.
     Material is identified using unique ID number. Note that to use this feature you need a Materials
     Project API key (https://materialsproject.org/api)."""
     import mp_api
@@ -156,7 +159,7 @@ def dos_data_from_mp_id(mp_id):
             print("this materials project entry does not appear to have phonon data")
             pass
 
-        phonon_frequencies = list(dos.as_dict()['frequencies'])     
+        phonon_frequencies = list(dos.as_dict()['frequencies']*1E12) # convert from THz to Hz 
         phonon_frequencies = process_imaginary(phonon_frequencies)    
 
         dos = dos.as_dict()['densities']
@@ -169,9 +172,8 @@ def bose_einstien_distribution(energy,temperature):
     return 1 / (math.exp(energy/(constants.Boltzmann*temperature)) - 1)
 
 def frequency_to_energy(frequency):
-    """convert frequency in THz to energy in joules"""
-    frequency_hz = frequency*1E12
-    energy = constants.h*frequency_hz
+    """convert frequency in Hz to energy in joules"""
+    energy = constants.h*frequency
     return energy
 
 def excite_by_heat(phonon_frequencies, temperature):
@@ -199,51 +201,45 @@ def play_chord(timelength):
     stream.stop()
     stream.close()
 
+def check_arguments(args):
 
-def main(args):
-    
-    global sonification_dictionary  # global audio_dictionary for callback
-
-    # Process command-line arguments
-    mp_ids = args.mp_ids
-    min_phonon = args.min_phonon
-    max_phonon = args.max_phonon
-    timelength = args.timelength
-    temperature = args.temperature
-
-     # Check if min_phonon and max_phonon values are valid floats
-    if min_phonon is not None:
+    # Check if min_phonon and max_phonon values are valid floats
+    if args.min_phonon is not None:
         try:
-            min_phonon = float(min_phonon)
+            args.min_phonon = float(args.min_phonon)
         except ValueError:
             print("Error: min_phonon must be a valid float.")
             return
 
-    if max_phonon is not None:
+    if args.max_phonon is not None:
         try:
-            max_phonon = float(max_phonon)
+            args.max_phonon = float(args.max_phonon)
         except ValueError:
             print("Error: max_phonon must be a valid float.")
             return
 
     # Check if timelength is a valid float
     try:
-        timelength = float(timelength)
+        args.timelength = float(args.timelength)
     except ValueError:
         print("Error: timelength must be a valid float.")
         return
 
-    if temperature:
-        assert temperature >= 0, "Error: temperature is specified in kelvin and must not be negative."
+    if args.temperature:
+        assert args.temperature >= 0, "Error: temperature is specified in kelvin and must not be negative."
 
     # Assert min_phonon and max_phonon values
-    assert min_phonon is None or max_phonon is None or min_phonon < max_phonon, "min_phonon must be less than max_phonon"
+    assert args.min_phonon is None or args.max_phonon is None or args.min_phonon < args.max_phonon, "min_phonon must be less than max_phonon"
 
-   # The mp_id variable can be used here to determine which material to process
+    return args
 
-   # TODO: Think about Nyquist frequency
+def main(args):
     
-    for mp_id in mp_ids:
+    global sonification_dictionary  # global sonification_dictionary which holds data for callback
+    
+    args = check_arguments(args)
+
+    for mp_id in args.mp_ids:
 
         if args.gamma_mode:
             # Get phonons (in THz) for the current MP ID
@@ -255,28 +251,32 @@ def main(args):
             amplitudes = get_athermal_amplitudes(dos_array=dos,num_frequencies=len(phonon_frequencies))
         
         # Convert phonon frequencies to audible frequencies (return in Hz)
-        audible_frequencies = phonon_to_audible(phonon_frequencies)
+        min_phonon, max_phonon = get_min_max_phonon_frequency(phonon_frequencies, args.min_phonon, args.max_phonon)
+        audible_frequencies = phonon_to_audible(phonon_frequencies, min_phonon, max_phonon, args.min_audible, args.max_audible)
         
         # Excite by heat and get updated amplitudes
-        # if temperature:
-        #     amplitudes = scale_by_occupation(amplitudes, phonon_frequencies, temperature)
+        # if args.temperature:
+        #     amplitudes = scale_by_occupation(amplitudes, phonon_frequencies, args.temperature)
+
         assert len(audible_frequencies) == len(amplitudes), "length of frequency and amplitude arrays are not equal"
 
         # Create global dictionary containing frequencies as keys. This will be used in the output stream.
         sonification_dictionary = {}
         for frequency, amplitude in zip(audible_frequencies,amplitudes):
             sonification_dictionary[frequency] = {'amplitude': amplitude, 'index': np.random.randint(0,1E3)}
-            # I might be imagining it, but placing slightly out of phase with a random index seems to make less harsh.
+            # I might be imagining it, but placing slightly out of phase with a random index seems to make sound less harsh.
 
         # Create and run the output stream for a set time
-        play_chord(timelength)
+        play_chord(args.timelength)
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Singing Materials Player")
     parser.add_argument("mp_ids", nargs='+', help="Materials Project IDs")
-    parser.add_argument("--min_phonon", type=float, default=None, help="Minimum phonon frequency in THz")
-    parser.add_argument("--max_phonon", type=float, default=None, help="Maximum phonon frequency in THz")
+    parser.add_argument("--min_phonon", type=float, default=None, help="Minimum phonon frequency in Hz. If not set, this will be extracted from the phonon data.")
+    parser.add_argument("--max_phonon", type=float, default=None, help="Maximum phonon frequency in Hz. If not set, this will be extracted from the phonon data.")
+    parser.add_argument("--min_audible", type=float, default=20, help="Minimum sound frequency in Hz")             
+    parser.add_argument("--max_audible", type=float, default=800, help="Maximum sound frequency in Hz") 
     parser.add_argument("--timelength", type=float, default=5, help="Length of the sample in seconds")
     parser.add_argument("--gamma_mode", type=bool, default=False, help="If True then gamma point frequencies are sonified only.")
     parser.add_argument("--temperature", type=float, default=None, help="Temperature in kelvin. If set the sonified amplitude is weighted by the bose-einstein distribution for phonon energy at specified temperature.")

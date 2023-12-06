@@ -17,7 +17,7 @@ When we imagine atoms in a material we may think of something perfectly static, 
 However even at absolute zero the atoms are vibrating with energy.
 Phonons are used to describe the vibrations of a crystalline material (a material formed with atoms in a periodically repeating geometric array).
 These vibrations are important because they affect a whole host of material properties, like electrical conductivity.
-They also
+
 
 You can visualise phonons [here](https://henriquemiranda.github.io/phononwebsite/phonon.html).
 There are also some articles for a more general audience [here](https://news.mit.edu/2010/explained-phonons-0706) and [here](https://www.reading.ac.uk/infrared/technical-library/absorption-theory/thermal-vibrations), for example.

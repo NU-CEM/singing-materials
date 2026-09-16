@@ -1,5 +1,7 @@
 # Singing Materials
 
+### !!! Note this has been superceded by https://github.com/NU-CEM/SingingMaterials
+
 ### What is the Singing Materials project?
 
 - Singing Materials explores the sonification of phonon data.
